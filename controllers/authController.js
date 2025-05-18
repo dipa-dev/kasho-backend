@@ -64,7 +64,7 @@ const adminLogin = async (req, res) => {
             expiresIn: process.env.JWT_EXPIRES_IN
         });
 
-        res.json({token, admin: {id: user_id, name: user.firstName, email:user.email}});
+        res.json({token, admin: {id: user._id, name: user.firstName, email:user.email}});
     }catch(error){
         res.status(500).json({message: "Server error", error: error.message});
     }
