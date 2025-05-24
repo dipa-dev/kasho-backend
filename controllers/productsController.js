@@ -69,11 +69,21 @@ const updateProduct = async (req, res) => {
     }
 };
 
+const addCategory = async (req, res) => {
+ const {name} = req.body;
+ if(!name){
+    return res.status(400).json({ message: "Please provide category" })
+ }
+ const createdCategory = await category.create({name});
+ res.status(201).json("Category added successfully.")
+}
+
 module.exports = {
     getAllProducts,
     addProduct,
     getCategory,
     getProductById,
     deleteProduct,
-    updateProduct
+    updateProduct,
+    addCategory
 };
