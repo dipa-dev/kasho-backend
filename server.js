@@ -18,6 +18,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.get('/', (req, res) => {
+    return res.status(200).json("api is working");
+})
+
 app.use("/api/auth",authRoutes);
 app.use("/api",productRout);
 
