@@ -1,6 +1,7 @@
 const Order = require("../models/order");
 const Product = require('../models/product');
 require('../models/product');
+const { sendOutOfStockAlert } = require('../utils/sendEmail');
 
 exports.placeOrder = async (req, res) => {
   try {
@@ -26,6 +27,9 @@ exports.placeOrder = async (req, res) => {
       product.qty -= item.quantity;
       product.inStock = product.qty > 0;
       await product.save();
+      if (product.qty === 0) {
+        await sendOutOfStockAlert(product);
+      }
     }
 
     // Create order with full item details for historical tracking

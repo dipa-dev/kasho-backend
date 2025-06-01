@@ -1,5 +1,6 @@
 const product = require("../models/product");
 const category = require("../models/category");
+const cloudinary = require('../config/cloudinary');
 
 const getAllProducts = async (req, res) => {
     try {
@@ -25,9 +26,24 @@ const getProductById = async (req, res) => {
 
 const addProduct = async (req, res) => {
     try {
-        const singleProduct = req.body;
-        const createdProduct = await product.create(singleProduct);
-        res.status(201).json({ message: "Product added successfully.", data: createdProduct });
+        let imageUrl = "";
+        let imagePublicId = "";
+
+        if (req.file) {
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'products'
+            });
+            imageUrl = uploadResult.secure_url;
+            imagePublicId = uploadResult.public_id;
+        }
+
+        const newProduct = await product.create({
+            ...req.body,
+            imageUrl,
+            imagePublicId
+        });
+
+        res.status(201).json({ message: "Product added successfully.", data: newProduct });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
@@ -45,24 +61,58 @@ const getCategory = async (req, res) => {
 const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const deletedProduct = await product.findByIdAndDelete(id);
-        if (!deletedProduct) {
+        const productToDelete = await product.findById(id);
+
+        if (!productToDelete) {
             return res.status(404).json({ message: "Product not found" });
         }
-        res.status(200).json({ message: "Product deleted successfully", data: deletedProduct });
+
+        // Delete image from Cloudinary if exists
+        if (productToDelete.imagePublicId) {
+            await cloudinary.uploader.destroy(productToDelete.imagePublicId);
+        }
+
+        await product.findByIdAndDelete(id);
+
+        res.status(200).json({ message: "Product deleted successfully", data: productToDelete });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
+
 const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const updates = req.body;
-        const updatedProduct = await product.findByIdAndUpdate(id, updates, { new: true }).populate('category');
-        if (!updatedProduct) {
+        const existingProduct = await product.findById(id);
+
+        if (!existingProduct) {
             return res.status(404).json({ message: "Product not found" });
         }
+
+        let imageUrl = existingProduct.imageUrl;
+        let imagePublicId = existingProduct.imagePublicId;
+
+        if (req.file) {
+            // Delete old image
+            if (imagePublicId) {
+                await cloudinary.uploader.destroy(imagePublicId);
+            }
+
+            // Upload new image
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'products'
+            });
+            imageUrl = uploadResult.secure_url;
+            imagePublicId = uploadResult.public_id;
+        }
+
+        const updatedProduct = await product.findByIdAndUpdate(id, {
+            ...req.body,
+            imageUrl,
+            imagePublicId
+        }, { new: true }).populate('category');
+
         res.status(200).json({ message: "Product updated successfully", data: updatedProduct });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
