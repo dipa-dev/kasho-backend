@@ -20,6 +20,7 @@
     "mongoose": "^8.14.1",
     "multer": "^2.0.0",
     "multer-storage-cloudinary": "^4.0.0",
-    "resend": "^4.5.1"
+    "resend": "^4.5.1",
+    "serverless-http": "^3.2.0"
   }
 }
